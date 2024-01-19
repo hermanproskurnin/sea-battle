@@ -1,38 +1,39 @@
+
 from random import randint
 
-# Создаем класс Dot, который представляет координаты на доске.
+# Create the Dot class, representing coordinates on the board.
 class Dot:
     def __init__(self, x, y):
         self.x = x
         self.y = y
 
-    # Перегружаем метод __eq__, чтобы можно было сравнивать объекты класса Dot с помощью ==
+    # Overload the __eq__ method to compare Dot objects using ==
     def __eq__(self, other):
         return self.x == other.x and self.y == other.y
 
-    # Перегружаем метод __repr__, чтобы объекты класса Dot можно было красиво выводить на экран
+    # Overload the __repr__ method to display Dot objects nicely
     def __repr__(self):
         return f"({self.x}, {self.y})"
 
-# Создаем класс BoardException, который будет использоваться для обработки исключительных ситуаций на доске.
+# Create the BoardException class to handle exceptions on the board.
 class BoardException(Exception):
     pass
 
-# Создаем класс BoardOutException, который будет использоваться, если мы попытаемся выстрелить за пределы доски.
+# Create the BoardOutException class to be used if trying to shoot outside the board.
 class BoardOutException(BoardException):
     def __str__(self):
-        return "Вы пытаетесь выстрелить за доску!"
+        return "You are trying to shoot outside the board!"
 
-# Создаем класс BoardUsedException, который будет использоваться, если мы уже стреляли в эту клетку.
+# Create the BoardUsedException class to be used if already shot at this cell.
 class BoardUsedException(BoardException):
     def __str__(self):
-        return "Вы уже стреляли в эту клетку"
+        return "You have already shot at this cell"
 
-# Создаем класс BoardWrongShipException, который будет использоваться, если мы попытаемся добавить на доску некорректный корабль.
+# Create the BoardWrongShipException class to be used if trying to add an incorrect ship to the board.
 class BoardWrongShipException(BoardException):
     pass
 
-# Создаем класс Ship, который представляет корабль.
+# Create the Ship class representing a ship.
 class Ship:
     def __init__(self, bow, l, o):
         self.bow = bow
@@ -40,7 +41,7 @@ class Ship:
         self.o = o
         self.lives = l
 
-    # Создаем свойство dots, которое возвращает список точек, занимаемых кораблем.
+    # Create the dots property that returns a list of points occupied by the ship.
     @property
     def dots(self):
         ship_dots = []
@@ -48,11 +49,11 @@ class Ship:
             cur_x = self.bow.x
             cur_y = self.bow.y
 
-            # Если ориентация корабля горизонтальная, то меняем x.
+            # If the ship orientation is horizontal, change x.
             if self.o == 0:
                 cur_x += i
 
-            # Если ориентация корабля вертикальная, то меняем y.
+            # If the ship orientation is vertical, change y.
             elif self.o == 1:
                 cur_y += i
 
@@ -60,27 +61,26 @@ class Ship:
 
         return ship_dots
 
-    # Метод shooten проверяет, попали ли мы в корабль.
+    # The shooten method checks if we hit the ship.
     def shooten(self, shot):
         return shot in self.dots
 
-#Создаем класс Board, который представляет игровую доску.
+# Create the Board class representing the game board.
 class Board:
-    # Инициализируем доску.
+    # Initialize the board.
     def __init__(self, hid=False, size=6):
         self.size = size
         self.hid = hid
 
         self.count = 0
-        # Создаем пустую доску, заполненную символом 'O'.
+        # Create an empty board filled with 'O' symbols.
         self.field = [["O"] * size for _ in range(size)]
 
         self.busy = []
         self.ships = []
 
-    # Добовляем корабль на доску
+    # Add a ship to the board.
     def add_ship(self, ship):
-
         for d in ship.dots:
             if self.out(d) or d in self.busy:
                 raise BoardWrongShipException()
@@ -118,7 +118,7 @@ class Board:
     def out(self, d):
         return not ((0 <= d.x < self.size) and (0 <= d.y < self.size))
 
-    #Выстрел
+    # Shoot
     def shot(self, d):
         if self.out(d):
             raise BoardOutException()
@@ -135,20 +135,20 @@ class Board:
                 if ship.lives == 0:
                     self.count += 1
                     self.contour(ship, verb=True)
-                    print("Корабль уничтожен!")
+                    print("The ship is destroyed!")
                     return False
                 else:
-                    print("Корабль ранен!")
+                    print("The ship is hit!")
                     return True
 
         self.field[d.x][d.y] = "."
-        print("Мимо!")
+        print("Miss!")
         return False
 
     def begin(self):
         self.busy = []
 
-#Инициализируем игрока
+# Initialize the player
 class Player:
     def __init__(self, board, enemy):
         self.board = board
@@ -166,112 +166,26 @@ class Player:
             except BoardException as e:
                 print(e)
 
-#Ход AI
+# AI Move
 class AI(Player):
     def ask(self):
         d = Dot(randint(0, 5), randint(0, 5))
-        print(f"Ход компьютера: {d.x + 1} {d.y + 1}")
+        print(f"Computer's move: {d.x + 1} {d.y + 1}")
         return d
 
-#Ход Игрока
+# Player Move
 class User(Player):
     def ask(self):
         while True:
-            cords = input("Ваш ход: ").split()
+            cords = input("Your move: ").split()
 
             if len(cords) != 2:
-                print(" Введите 2 координаты! ")
+                print(" Enter 2 coordinates! ")
                 continue
 
             x, y = cords
 
             if not (x.isdigit()) or not (y.isdigit()):
-                print(" Введите числа! ")
+                print(" Enter numbers! ")
                 continue
 
-            x, y = int(x), int(y)
-
-            return Dot(x - 1, y - 1)
-
-#Инициализация игры
-class Game:
-    def __init__(self, size=6):
-        self.size = size
-        pl = self.random_board()
-        co = self.random_board()
-        co.hid = True
-
-        self.ai = AI(co, pl)
-        self.us = User(pl, co)
-
-    def random_board(self):
-        board = None
-        while board is None:
-            board = self.random_place()
-        return board
-
-    def random_place(self):
-        lens = [3, 2, 2, 1, 1, 1, 1]
-        board = Board(size=self.size)
-        attempts = 0
-        for l in lens:
-            while True:
-                attempts += 1
-                if attempts > 2000:
-                    return None
-                ship = Ship(Dot(randint(0, self.size), randint(0, self.size)), l, randint(0, 1))
-                try:
-                    board.add_ship(ship)
-                    break
-                except BoardWrongShipException:
-                    pass
-        board.begin()
-        return board
-    #Форма ввода
-    def greet(self):
-        print("-------------------")
-        print("      Игра       ")
-        print("   Морской бой    ")
-        print("-------------------")
-        print(" формат ввода Выстрела: x y ")
-        print(" x - номер строки  ")
-        print(" y - номер столбца ")
-    #Информация о поле
-    def loop(self):
-        num = 0
-        while True:
-            print("-" * 20)
-            print("Доска пользователя:")
-            print(self.us.board)
-            print("-" * 20)
-            print("Доска компьютера:")
-            print(self.ai.board)
-            if num % 2 == 0:
-                print("-" * 20)
-                print("Ходит пользователь!")
-                repeat = self.us.move()
-            else:
-                print("-" * 20)
-                print("Ходит компьютер!")
-                repeat = self.ai.move()
-            if repeat:
-                num -= 1
-
-            if self.ai.board.count == 7:
-                print("-" * 20)
-                print("Пользователь выиграл!")
-                break
-
-            if self.us.board.count == 7:
-                print("-" * 20)
-                print("Компьютер выиграл!")
-                break
-            num += 1
-    #Старт игры
-    def start(self):
-        self.greet()
-        self.loop()
-
-
-g = Game()
-g.start()
